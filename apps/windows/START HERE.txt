@@ -1,0 +1,31 @@
+RELAY — talk instead of typing
+==============================
+
+1. Double-click Relay.exe (in this folder).
+
+   Windows may say "Windows protected your PC" — Relay isn't from the Microsoft
+   Store yet. Click "More info", then "Run anyway". You only do this once.
+
+2. A small black pill appears at the top of your screen: "Relay is ready".
+
+3. Click into any text box — WhatsApp, Gmail, Word, anywhere — then
+   HOLD  Ctrl + Win  (the Windows key), say what you want to write, and LET GO.
+   Your words appear where you were typing.
+
+   English, Hindi, or a mix — all fine. Hindi comes out in English letters
+   (kal milte hain). Want it in Devanagari (कल मिलते हैं) instead? Right-click
+   Relay's icon by the clock (you may need the ^ arrow) → Hindi → In Devanagari.
+
+Good to know
+------------
+- Everything stays on this PC. Nothing you say is sent anywhere.
+- Relay starts with Windows. To stop that, or to quit: right-click its icon
+  by the clock.
+- More accurate speech: right-click the icon → Speech → More accurate
+  (a one-time 574 MB download; a little slower on older laptops).
+- Keep this folder where it is (Documents is a good home) — Relay runs from here.
+
+Something wrong?
+----------------
+Right-click Relay's icon → "Open the log folder", and send relay.log to
+whoever gave you Relay. It says what happened — never what you said.

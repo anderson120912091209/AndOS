@@ -1,0 +1,25 @@
+node_modules/
+dist/
+build/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+apps/web/dist/
+.context/*.png
+.data/
+coverage/
+*.tsbuildinfo
+
+# mac app build artifacts
+apps/mac/.build/
+apps/mac/.build-release/
+apps/mac/Relay.app/
+apps/mac/Vendor/
+apps/mac/dist/
+
+# windows app: downloaded engine + model, packaged zips
+apps/windows/vendor/
+apps/windows/models/
+apps/windows/release/

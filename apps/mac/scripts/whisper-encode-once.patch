@@ -1,0 +1,48 @@
+Relay's patch to whisper.cpp (applied by scripts/build-whisper.sh): with the language set to
+"auto", whisper_full encoded the first 30-second window twice — once to detect the language,
+once to transcribe. The transcript now reuses the detection's encoder pass: one pass per
+utterance instead of two, the same text, about twice as fast.
+
+diff --git a/src/whisper.cpp b/src/whisper.cpp
+index 1675f33..e0b0858 100644
+--- a/src/whisper.cpp
++++ b/src/whisper.cpp
+@@ -6989,6 +6989,11 @@ int whisper_full_with_state(
+         }
+     }
+ 
++    // the window the encoder last ran on, and with which audio context: language detection below
++    // encodes the first window, and the main loop reuses it instead of encoding it again
++    int encoded_seek = -1;
++    const int encoded_audio_ctx = state->exp_n_audio_ctx;
++
+     // auto-detect language if not specified
+     if (params.language == nullptr || strlen(params.language) == 0 || strcmp(params.language, "auto") == 0 || params.detect_language) {
+         std::vector<float> probs(whisper_lang_max_id() + 1, 0.0f);
+@@ -7007,6 +7012,7 @@ int whisper_full_with_state(
+         }
+         state->lang_id = lang_id;
+         params.language = whisper_lang_str(lang_id);
++        encoded_seek = 0;
+ 
+         WHISPER_LOG_INFO("%s: auto-detected language: %s (p = %f)\n", __func__, params.language, probs[whisper_lang_id(params.language)]);
+         if (params.detect_language) {
+@@ -7211,11 +7217,14 @@ int whisper_full_with_state(
+             }
+         }
+ 
+-        // encode audio features starting at offset seek
+-        if (!whisper_encode_internal(*ctx, *state, seek, params.n_threads, params.abort_callback, params.abort_callback_user_data)) {
+-            WHISPER_LOG_ERROR("%s: failed to encode\n", __func__);
+-            return -6;
++        // encode audio features starting at offset seek, unless language detection just did
++        if (seek != encoded_seek || state->exp_n_audio_ctx != encoded_audio_ctx) {
++            if (!whisper_encode_internal(*ctx, *state, seek, params.n_threads, params.abort_callback, params.abort_callback_user_data)) {
++                WHISPER_LOG_ERROR("%s: failed to encode\n", __func__);
++                return -6;
++            }
+         }
++        encoded_seek = -1;
+ 
+         // if there is a very short audio segment left to process, we remove any past prompt since it tends
+         // to confuse the decoder and often make it repeat or hallucinate stuff

@@ -1,0 +1,71 @@
+/* Relay's HUD on Windows: no notch to grow from, so a black pill drops in at the top of the
+   screen — the same black, the same quiet motion as the Mac's notch. */
+:root { color-scheme: dark; }
+html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; user-select: none; }
+body { display: flex; justify-content: center; align-items: flex-start; padding-top: 10px; box-sizing: border-box;
+       font: 500 13px "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+
+.pill {
+  display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 14px 0 9px; box-sizing: border-box;
+  background: #000; color: rgba(255, 255, 255, .92); border-radius: 19px;
+  border: 1px solid rgba(255, 255, 255, .09);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .28);
+  opacity: 0; transform: translateY(-14px) scale(.94); filter: blur(4px);
+  transition: opacity .16s ease-in, transform .22s cubic-bezier(.3, .7, .4, 1), filter .16s ease-in;
+}
+.pill.on {
+  opacity: 1; transform: none; filter: none;
+  transition: opacity .2s ease-out, transform .38s cubic-bezier(.2, 1.25, .35, 1), filter .2s ease-out;
+}
+
+/* Relay, the mochi */
+.mochi { width: 26px; height: 26px; flex: none; overflow: visible; }
+.mochi .antenna { fill: none; stroke: #a9a9b2; stroke-width: 4.5; stroke-linecap: round; }
+.mochi .tip { fill: #5ac8fa; }
+.mochi .shine { fill: rgba(255, 255, 255, .7); }
+.mochi .cheek { fill: #ff7aa8; opacity: .5; }
+.mochi .eyes ellipse { fill: #16161a; }
+.mochi .glint { fill: #fff; }
+.mochi .happy, .mochi .smile { fill: none; stroke: #16161a; stroke-width: 3; stroke-linecap: round; }
+.mochi .eyes { transform-origin: 50px 55px; animation: blink 3.7s infinite; }
+.mochi .happy, .mochi .oh { display: none; }
+.mochi .oh { fill: #16161a; }
+
+.listening .mochi { animation: bounce .9s ease-in-out infinite; }
+.listening .mochi .smile { display: none; }
+.listening .mochi .oh { display: inline; animation: talk .45s ease-in-out infinite; transform-origin: 50px 67px; }
+.listening .mochi .tip { animation: glow .6s ease-in-out infinite alternate; }
+.thinking .mochi { animation: sway 1.4s ease-in-out infinite; transform-origin: 50% 90%; }
+.thinking .mochi .eyes { transform: translate(2.5px, -2.5px); animation: none; }
+.done .mochi { animation: hop .55s cubic-bezier(.3, 1.4, .5, 1) 1; }
+.done .mochi .eyes { display: none; }
+.done .mochi .happy { display: inline; }
+
+@keyframes blink { 0%, 95.5%, 100% { transform: scaleY(1); } 97.5% { transform: scaleY(.1); } }
+@keyframes bounce { 0%, 100% { transform: translateY(0) scale(1.03, .97); } 50% { transform: translateY(-2.5px) scale(.98, 1.02); } }
+@keyframes talk { 0%, 100% { transform: scale(.8); } 50% { transform: scale(1.25); } }
+@keyframes glow { from { filter: none; } to { filter: drop-shadow(0 0 3px #5ac8fa); } }
+@keyframes sway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+@keyframes hop { 0% { transform: translateY(0); } 40% { transform: translateY(-4px) scale(1.04); } 100% { transform: none; } }
+
+/* what's beside Relay: one of these at a time */
+.wave, .dots, .check, .text { display: none; }
+.listening .wave, .thinking .dots, .done .check, .says .text { display: flex; }
+.done.says .check { display: none; }
+
+.wave { align-items: center; gap: 3px; height: 18px; }
+.wave i { display: block; width: 3px; height: 4px; border-radius: 2px; background: #fff; transition: height .07s linear; }
+
+.dots { gap: 5px; align-items: center; padding: 0 4px; }
+.dots i { width: 5px; height: 5px; border-radius: 50%; background: #fff; opacity: .3; animation: dot 1s infinite; }
+.dots i:nth-child(2) { animation-delay: .16s; }
+.dots i:nth-child(3) { animation-delay: .32s; }
+@keyframes dot { 0%, 60%, 100% { opacity: .25; transform: none; } 30% { opacity: 1; transform: translateY(-2px); } }
+
+.check { width: 18px; height: 18px; }
+.check path { fill: none; stroke: #73db8c; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round;
+              stroke-dasharray: 24; stroke-dashoffset: 24; animation: draw .32s .05s ease-out forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+.text { white-space: nowrap; max-width: 380px; overflow: hidden; text-overflow: ellipsis; }
+.warn .text { color: #ffbc5c; }

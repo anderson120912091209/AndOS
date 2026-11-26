@@ -1,0 +1,27 @@
+{
+  "name": "relay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Voice-first assistant: speak to dictate, or dispatch a background agent task that runs remotely and reports back.",
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "server": "tsx watch apps/server/src/index.ts",
+    "worker": "tsx watch apps/worker/src/index.ts",
+    "worker:sandbox": "node scripts/worker-sandbox.mjs",
+    "box:build": "docker build -t relay-browser apps/box",
+    "web": "pnpm -C apps/web dev",
+    "build:web": "pnpm -C apps/web build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.base.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.0",
+    "esbuild": "0.28.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
