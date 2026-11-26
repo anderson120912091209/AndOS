@@ -1,0 +1,27 @@
+{
+  "BrowserSignin": 0,
+  "RestoreOnStartup": 1,
+  "PasswordManagerEnabled": false,
+  "AutofillCreditCardEnabled": false,
+  "DownloadDirectory": "/home/agent/Downloads",
+  "PromptForDownloadLocation": false,
+  "URLBlocklist": [
+    "chrome://password-manager",
+    "chrome://settings/passwords",
+    "chrome://settings/cookies",
+    "chrome://settings/content/all",
+    "chrome://inspect",
+    "chrome://net-export",
+    "chrome://net-internals",
+    "devtools://*",
+    "view-source:*"
+  ],
+  "DeveloperToolsAvailability": 2,
+  "RemoteDebuggingAllowed": false,
+  "ExtensionInstallBlocklist": [
+    "*"
+  ],
+  "AutofillAddressEnabled": false,
+  "BrowserGuestModeEnabled": false,
+  "BrowserAddPersonEnabled": false
+}

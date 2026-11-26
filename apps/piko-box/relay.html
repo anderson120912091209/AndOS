@@ -1,0 +1,73 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Relay’s computer</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  #screen { position: fixed; inset: 0; }
+  #status { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none;
+            padding: 7px 14px; border-radius: 999px; background: rgba(0,0,0,.72); color: rgba(255,255,255,.7);
+            font: 13px -apple-system, system-ui, sans-serif; white-space: nowrap; transition: opacity .3s; }
+  #status.hidden { opacity: 0; }
+</style></head>
+<body>
+<div id="screen"></div>
+<div id="status">Connecting to Relay’s computer…</div>
+<script type="module">
+// A minimal, quiet viewer for Relay's box: just the screen, scaled to fit, nothing to fiddle with.
+import RFB from './core/rfb.js';
+
+const params = new URLSearchParams(location.search);
+const token = params.get('token') || '';
+// Watching (the default in the Box window's Look mode) sends nothing to the box: you can only
+// type there during a takeover, when Relay's agent is stopped — so nothing it runs can see you type.
+let viewOnly = params.get('view') === '1';
+const status = document.getElementById('status');
+const native = window.webkit?.messageHandlers?.relay; // the Mac app's Box window, when present
+if (native) status.style.display = 'none'; // the Box window shows its own status
+let rfb;
+
+function connect() {
+  const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
+  rfb = new RFB(document.getElementById('screen'), `${scheme}://${location.host}/websockify?token=${encodeURIComponent(token)}`);
+  rfb.scaleViewport = true;
+  rfb.resizeSession = false;
+  rfb.background = '#000';
+  rfb.focusOnClick = true;
+  rfb.viewOnly = viewOnly;
+  rfb.addEventListener('connect', () => { status.classList.add('hidden'); rfb.focus(); native?.postMessage({ connected: true }); });
+  rfb.addEventListener('disconnect', (e) => {
+    status.classList.remove('hidden');
+    status.textContent = e.detail.clean ? 'Disconnected from Relay’s computer' : 'Reconnecting…';
+    native?.postMessage({ connected: false });
+    if (!e.detail.clean) setTimeout(connect, 1000);
+  });
+  // Copy in the box → your Mac's clipboard (the Box window forwards it).
+  rfb.addEventListener('clipboard', (e) => native?.postMessage({ clipboard: e.detail.text }));
+}
+
+// ⌘V in the Box window: the Mac app hands us your clipboard; paste it into the box with Ctrl+V,
+// so a password from your password manager goes straight into the sign-in field.
+window.relayViewOnly = (on) => {
+  viewOnly = !!on;
+  if (rfb) rfb.viewOnly = viewOnly;
+};
+window.relayPaste = (text) => {
+  if (!rfb || viewOnly) return;
+  rfb.clipboardPasteFrom(text);
+  rfb.sendKey(0xffe3, 'ControlLeft', true);
+  rfb.sendKey(0x0076, 'KeyV', true);
+  rfb.sendKey(0x0076, 'KeyV', false);
+  rfb.sendKey(0xffe3, 'ControlLeft', false);
+};
+// Other ⌘ shortcuts mean Ctrl on the box (it's Linux): ⌘A, ⌘C, ⌘X, ⌘Z.
+window.relayShortcut = (key) => {
+  if (!rfb || viewOnly) return;
+  const keysym = key.charCodeAt(0);
+  rfb.sendKey(0xffe3, 'ControlLeft', true);
+  rfb.sendKey(keysym, `Key${key.toUpperCase()}`, true);
+  rfb.sendKey(keysym, `Key${key.toUpperCase()}`, false);
+  rfb.sendKey(0xffe3, 'ControlLeft', false);
+};
+
+connect();
+</script>
+</body></html>

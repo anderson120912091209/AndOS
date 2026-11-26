@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+# no-userns CMD...: run CMD under one more seccomp filter (stacked on the container's) that refuses to
+# create user namespaces. Chromium's sandbox needs them, so the container's profile allows them; nothing
+# else in the box does, and they are a well-worn path into kernel code. Children inherit the filter.
+import errno
+import os
+import sys
+
+import seccomp
+
+CLONE_NEWUSER = 0x10000000
+f = seccomp.SyscallFilter(defaction=seccomp.ALLOW)
+f.add_rule(seccomp.ERRNO(errno.EPERM), "unshare")
+f.add_rule(seccomp.ERRNO(errno.EPERM), "clone", seccomp.Arg(0, seccomp.MASKED_EQ, CLONE_NEWUSER, CLONE_NEWUSER))
+f.add_rule(seccomp.ERRNO(errno.ENOSYS), "clone3")  # glibc falls back to clone(), which the rule above sees
+f.load()
+os.execvp(sys.argv[1], sys.argv[1:])

@@ -1,0 +1,12 @@
+{
+  "name": "@piko/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared types for Piko: tasks, use cases, analytics events.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts"
+}

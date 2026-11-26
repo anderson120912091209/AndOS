@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<title>Piko 的電腦</title>
+<link rel="stylesheet" href="/takeover/app.css">
+{{LIFF_SDK}}
+<script type="module" src="/takeover/app.js"></script>
+</head>
+<body data-liff-id="{{LIFF_ID}}">
+<header>
+  <div class="title">🖐️ Piko 的電腦・你正在操作</div>
+  <div id="reason" class="reason"></div>
+  <div id="status" class="status">連線中…</div>
+</header>
+<main id="screen" class="screen" aria-label="Piko 的電腦畫面"></main>
+<section id="controls" class="controls">
+  <form id="typer" class="typer" autocomplete="off">
+    <input id="text" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" placeholder="點欄位後，在這裡打字" aria-label="要輸入的文字">
+    <button type="button" id="mask" aria-label="隱藏或顯示你打的字">👁</button>
+    <button type="submit" class="send">送出</button>
+  </form>
+  <div class="keys">
+    <button type="button" data-key="XK_Tab">Tab ⇥</button>
+    <button type="button" data-key="XK_Return">Enter ⏎</button>
+    <button type="button" data-key="XK_BackSpace">⌫ 刪除</button>
+    <button type="button" id="zoom">🔍 放大</button>
+  </div>
+  <button type="button" id="done" class="done">✅ 完成，交還給 Piko</button>
+  <p class="note">你操作的時候，Piko 完全停下來：看不到畫面，也收不到你打的字。</p>
+</section>
+<section id="message" class="message" hidden>
+  <div id="message-title" class="message-title"></div>
+  <p id="message-body"></p>
+  <a id="back" class="back" href="https://line.me/R/">回到 LINE</a>
+</section>
+</body>
+</html>

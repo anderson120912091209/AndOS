@@ -1,0 +1,179 @@
+#!/bin/sh
+# agentctl — hold or release the agent's side of the box around a takeover. Runs as root: once from
+# start.sh, otherwise only through `docker exec` from Relay's server (apps/server/src/box/driver.ts).
+#
+#   hold [WxH]  a person is about to use the box. Nothing of the agent's may exist while they type:
+#            X11 lets any client on the screen read every keystroke, so a hijacked agent process
+#            could log a password. Every `agent` process is killed (SIGKILL, never SIGSTOP: a stopped
+#            client still has every keystroke queued for it). The screen itself is replaced too: the
+#            agent talked to the old X server, and X.Org has unfixed memory-safety bugs, so a server
+#            the agent took over would outlive its processes. Chromium comes back on the new screen
+#            with its tabs. Only then does the screen that takes typing (VNC :5900) open. (Piko's box
+#            has no DevTools door to close: see start.sh.) With WxH (a phone's screen area, doubled),
+#            the new screen has that shape and Chromium draws at 2x, so websites see a phone-sized
+#            window and show their mobile layout: big fields, readable text.
+#   release  they're done: the typing screen closes (whoever is still connected to it is cut off),
+#            the clipboard they used is cleared, the desktop shape comes back if it was changed, and
+#            the agent's side comes back.
+#   up       start whatever is missing (at boot, or when a worker wakes the box), unless a takeover
+#            holds the box. A hold nobody released (the server restarted) expires after 10 minutes;
+#            a box that restarts mid-takeover keeps the hold, and its typing screen.
+#   screen   start the screen if it isn't running: Xvfb and openbox as `screen`, and the watching VNC.
+#
+# Everything started here except Chromium runs under no-userns (a stacked seccomp filter that refuses
+# user namespaces; only Chromium's sandbox needs them).
+#
+# Watching is always possible on the view-only screen (VNC :5901, started by start.sh).
+# Exit codes: 0 done · 1 couldn't stop the agent · 3 held by a takeover.
+set -eu
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+RUN=/run/relay
+FLAG=$RUN/takeover
+TTL=1800 # as long as the longest takeover (src/takeover.ts), plus waiting for the link to be opened
+TYPING='x11vnc -display :99 -rfbport 5900'
+WATCHING='x11vnc -display :99 -rfbport 5901'
+# -nosel: no clipboard either way, so nothing the agent copied reaches a phone and nothing pasted
+# lingers. -noipv6: IPv4 loopback only, where websockify connects.
+VNC_FLAGS='-localhost -noipv6 -forever -shared -nopw -noxdamage -noshm -nosel -quiet'
+NO_USERNS=/opt/relay/no-userns
+# The screen's shape, `WxH scale`: the agent's desktop, or during a takeover the person's phone.
+SHAPE=$RUN/screen
+DESKTOP="${SCREEN:-1280x800} 1"
+shape() { cat "$SHAPE" 2>/dev/null || echo "$DESKTOP"; }
+set_shape() { printf '%s\n' "$1" > "$SHAPE"; chmod 644 "$SHAPE"; }
+LOG=/home/relay/log
+
+# One agentctl at a time: a hold, a release and a wake never interleave.
+install -d -m 755 "$RUN"
+exec 9>"$RUN/.lock"
+flock 9
+
+# Start a process as relay or agent, detached, with a clean environment (as in start.sh).
+spawn() {
+  who=$1; shift
+  # 9>&- : what it starts must not inherit agentctl's lock, or the lock would outlive this call.
+  setsid -f env -i PATH="$PATH" HOME="/home/$who" USER="$who" LOGNAME="$who" LANG=C.UTF-8 DISPLAY=:99 SCREEN="${SCREEN:-1280x800}" \
+    setpriv --reuid="$who" --regid="$who" --init-groups --inh-caps=-all -- "$@" 9>&-
+}
+
+# The screen: Xvfb and openbox as `screen`, then the always-on watching VNC (relay).
+screen_on() {
+  if ! pgrep -u screen -x Xvfb >/dev/null; then
+    rm -f /tmp/.X99-lock /tmp/.X11-unix/X99 # stale after a crash or a replaced screen
+    # -extension MIT-SHM: shared memory between the X server and a client only works when both are the same
+    # user, and `screen` shares no user with anyone; every client falls back to the plain X protocol.
+    spawn screen $NO_USERNS Xvfb :99 -screen 0 "$(shape | cut -d' ' -f1)x24" -nolisten tcp -nolisten unix -ac -extension MIT-SHM >>"$LOG/xvfb.log" 2>&1
+    for _ in $(seq 50); do DISPLAY=:99 xdotool getdisplaygeometry >/dev/null 2>&1 && break; sleep 0.1; done
+    spawn screen $NO_USERNS openbox >>"$LOG/openbox.log" 2>&1
+  fi
+  if [ -n "${RELAY_BOX_VIEW_TOKEN:-}" ] && ! pgrep -f "$WATCHING" >/dev/null; then
+    spawn relay $NO_USERNS $WATCHING -viewonly $VNC_FLAGS >>"$LOG/x11vnc-view.log" 2>&1
+  fi
+}
+
+# A brand-new X server: everything on the old one (the VNC servers, Chromium) goes down with it, and
+# Chromium's keep-alive loop brings it back on the new one, tabs restored.
+fresh_screen() {
+  for _ in $(seq 30); do
+    pkill -KILL -u screen 2>/dev/null || true
+    pgrep -u screen >/dev/null || break
+    sleep 0.1
+  done
+  pkill -KILL -f "$WATCHING" 2>/dev/null || true
+  screen_on
+}
+
+typing_screen_on() {
+  if ! pgrep -f "$TYPING" >/dev/null; then
+    spawn relay $NO_USERNS $TYPING $VNC_FLAGS >>"$LOG/x11vnc-typing.log" 2>&1
+    # Ready once something answers on 5900 (curl's 7 = connection refused; VNC's banner isn't HTTP).
+    for _ in $(seq 40); do rc=0; curl -s -m 1 -o /dev/null http://127.0.0.1:5900/ 2>/dev/null || rc=$?; [ "$rc" -eq 7 ] || break; sleep 0.1; done
+  fi
+}
+
+typing_screen_off() {
+  # Only when the view-only screen exists: a box from before it keeps its one screen.
+  pgrep -f 'x11vnc .*-rfbport 5901' >/dev/null || return 0
+  for _ in $(seq 30); do
+    pkill -KILL -f "$TYPING" 2>/dev/null || true
+    pgrep -f "$TYPING" >/dev/null || return 0
+    sleep 0.1
+  done
+}
+
+held() {
+  [ -e "$FLAG" ] || return 1
+  age=$(( $(date +%s) - $(cat "$FLAG" 2>/dev/null || echo 0) ))
+  [ "$age" -lt "$TTL" ] && return 0
+  rm -f "$FLAG"
+  return 1
+}
+
+up() {
+  if held; then
+    typing_screen_on # the box restarted mid-takeover: the person's screen comes back, the agent doesn't
+    echo held
+    exit 3
+  fi
+  typing_screen_off
+  # Not held, so the screen is the agent's: its desktop shape, whatever an earlier takeover left.
+  if [ "$(shape)" != "$DESKTOP" ]; then
+    set_shape "$DESKTOP"
+    fresh_screen
+  fi
+  # boxd only behind the fence, and with its token handed over in a file only `agent` can read.
+  if [ -e "$RUN/fenced" ] && [ -n "${RELAY_BOXD_TOKEN:-}" ] && ! pgrep -u agent -f boxd.mjs >/dev/null; then
+    install -d -o agent -g agent -m 700 /run/boxd
+    (umask 077; printf '%s' "$RELAY_BOXD_TOKEN" > /run/boxd/token)
+    chown agent:agent /run/boxd/token && chmod 400 /run/boxd/token
+    spawn agent $NO_USERNS env RELAY_BOXD_TOKEN_FILE=/run/boxd/token RELAY_WORKSPACE=/home/agent node /opt/relay/boxd.mjs >>/tmp/boxd.log 2>&1
+    for _ in $(seq 40); do curl -sf -m 1 http://127.0.0.1:7070/health >/dev/null 2>&1 && break; sleep 0.1; done
+  fi
+  echo up
+}
+
+hold() {
+  size=${1:-}
+  if [ -n "$size" ]; then
+    # Only digits reach Xvfb: WxH within what a phone (doubled) can be.
+    echo "$size" | grep -Eq '^[0-9]{3,4}x[0-9]{3,4}$' || { echo "bad size: $size" >&2; exit 2; }
+    w=${size%x*}; h=${size#*x}
+    [ "$w" -ge 640 ] && [ "$w" -le 1200 ] && [ "$h" -ge 600 ] && [ "$h" -le 2000 ] || { echo "size out of range: $size" >&2; exit 2; }
+    set_shape "$size 2"
+  fi
+  date +%s > "$FLAG"
+  for _ in $(seq 50); do
+    pkill -KILL -u agent 2>/dev/null || true
+    if ! pgrep -u agent >/dev/null; then
+      fresh_screen
+      typing_screen_on
+      echo held
+      exit 0
+    fi
+    sleep 0.1
+  done
+  echo "couldn't stop the agent's processes" >&2
+  exit 1
+}
+
+release() {
+  rm -f "$FLAG"
+  typing_screen_off
+  # A password pasted or copied during the takeover isn't left on the clipboard for the agent.
+  DISPLAY=:99 xsel --logfile /dev/null --clear --primary 2>/dev/null || true
+  DISPLAY=:99 xsel --logfile /dev/null --clear --clipboard 2>/dev/null || true
+  # Back to the desktop the agent works on (its screenshots and clicks assume that shape).
+  if [ "$(shape)" != "$DESKTOP" ]; then
+    set_shape "$DESKTOP"
+    fresh_screen
+  fi
+  up
+}
+
+case "${1:-}" in
+  hold) hold "${2:-}" ;;
+  release) release ;;
+  up) up ;;
+  screen) screen_on; echo screen ;;
+  *) echo "usage: agentctl hold [WxH]|release|up|screen" >&2; exit 2 ;;
+esac

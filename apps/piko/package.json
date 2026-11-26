@@ -1,0 +1,31 @@
+{
+  "name": "@piko/app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Piko: LINE gateway, Temporal worker and the agent harness.",
+  "scripts": {
+    "dev": "node --env-file=.env --disable-warning=ExperimentalWarning --import tsx src/dev/line-dev.ts",
+    "chat": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning --import tsx src/dev/chat.ts",
+    "worker": "node --env-file=.env --disable-warning=ExperimentalWarning --import tsx src/worker.ts",
+    "gateway": "node --env-file=.env --disable-warning=ExperimentalWarning --import tsx src/gateway.ts",
+    "temporal": "temporal server start-dev --ip 127.0.0.1 --db-filename .data/temporal.db",
+    "typecheck": "tsc --noEmit -p .",
+    "check:takeover": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning --import tsx src/dev/takeover-check.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.3.0",
+    "@novnc/novnc": "1.7.0",
+    "@piko/core": "link:../../packages/piko-core",
+    "@temporalio/activity": "^1.24.0",
+    "@temporalio/client": "^1.24.0",
+    "@temporalio/worker": "^1.24.0",
+    "@temporalio/workflow": "^1.24.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
