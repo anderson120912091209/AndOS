@@ -1,0 +1,515 @@
+:root {
+  --bg: #f3f2ee;
+  --panel: #ffffff;
+  --line: #e2e0d9;
+  --text: #1f2328;
+  --muted: #6b6f76;
+  --accent: #2f5bd3;
+  --accent-soft: #e6ecfb;
+  font-family: "Inter Variable", system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.lab {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr) 290px;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100vh;
+}
+
+.topbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.title h1 {
+  margin: 0;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+
+.title p {
+  margin: 2px 0 0;
+  color: var(--muted);
+}
+
+.globals {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.globals label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.globals input[type="range"] {
+  width: 110px;
+}
+
+output {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  min-width: 3.2em;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.segmented button {
+  border: 0;
+  background: transparent;
+  padding: 4px 9px;
+  color: var(--muted);
+}
+
+.segmented button + button {
+  border-left: 1px solid var(--line);
+}
+
+.segmented button.on {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.source,
+.tuning {
+  overflow: auto;
+  padding: 16px;
+  background: var(--panel);
+}
+
+.source {
+  border-right: 1px solid var(--line);
+}
+
+.tuning {
+  border-left: 1px solid var(--line);
+}
+
+.source > label,
+.source h3 {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.source h3 {
+  margin-top: 18px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: 13px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--text);
+  background: #fbfbf9;
+}
+
+textarea:focus {
+  outline: 2px solid var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.issues {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  list-style: none;
+  border-radius: 8px;
+  background: #fff4ef;
+  color: #a23a12;
+  font-size: 12px;
+}
+
+.issues span {
+  color: #c0785a;
+}
+
+.presets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.presets button {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: transparent;
+}
+
+.presets button:hover {
+  background: var(--bg);
+}
+
+.presets button.on {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.panes {
+  overflow: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pane {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 14px 16px 10px;
+  cursor: pointer;
+  transition: border-color 120ms, box-shadow 120ms;
+}
+
+.pane.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.pane > header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.pane h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.pane header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.math-scroll {
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+.math-scroll svg {
+  display: block;
+}
+
+.math-view .hover {
+  fill: rgb(47 91 211 / 0.08);
+  stroke: rgb(47 91 211 / 0.7);
+  pointer-events: none;
+}
+
+.math-view .guide {
+  stroke: rgb(214 69 65 / 0.45);
+  stroke-dasharray: 6 4;
+}
+
+.inspector {
+  margin: 6px 0 0;
+  min-height: 1.4em;
+  font: 12px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--muted);
+}
+
+.controls header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.controls h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.controls header button {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  padding: 3px 10px;
+}
+
+fieldset {
+  margin: 0 0 10px;
+  padding: 8px 10px 4px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+legend {
+  padding: 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.param {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3px;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+}
+
+.param:has(input[type="range"]) {
+  grid-template-columns: 1fr auto;
+}
+
+.param:has(input[type="range"]) span {
+  grid-column: 1 / -1;
+}
+
+.param input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.param.toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Editor ─────────────────────────────────────────────────────────────── */
+
+.editor-pane {
+  cursor: default;
+}
+
+.editor-pane > header {
+  justify-content: space-between;
+}
+
+.math-editor {
+  position: relative;
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  padding: 18px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  cursor: text;
+  transition: border-color 120ms, box-shadow 120ms;
+}
+
+.math-editor.focused {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.editor-scroll {
+  position: relative;
+  overflow: visible;
+}
+
+.editor-scroll svg {
+  display: block;
+  overflow: visible;
+}
+
+.caret {
+  fill: var(--accent);
+  animation: blink 1.05s steps(1, end) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.editor-hint {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 10px;
+  white-space: nowrap;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* Off-screen but focusable and "visible" to the browser, so typing and IMEs reach it. */
+.editor-input {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  resize: none;
+  overflow: hidden;
+}
+
+.suggestions {
+  position: absolute;
+  z-index: 10;
+  min-width: 260px;
+  max-width: 360px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgb(20 24 40 / 0.14), 0 2px 6px rgb(20 24 40 / 0.06);
+}
+
+.suggestions button {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  text-align: left;
+}
+
+.suggestions button.on {
+  background: var(--accent-soft);
+}
+
+.suggestions .preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 28px;
+}
+
+.suggestions .preview svg {
+  max-width: 44px;
+  max-height: 40px;
+}
+
+.suggestions .label {
+  font-size: 13px;
+}
+
+.suggestions .keyword {
+  font: 11.5px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--muted);
+}
+
+.suggestions footer {
+  margin-top: 4px;
+  padding: 5px 8px 2px;
+  border-top: 1px solid var(--line);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  font: 11px ui-monospace, "SF Mono", Menlo, monospace;
+  text-align: center;
+  color: var(--text);
+  background: #fafaf8;
+}
+
+.latex-out {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.latex-out code {
+  flex: 1;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: #f6f6f3;
+  font: 12.5px ui-monospace, "SF Mono", Menlo, monospace;
+  color: #3d4249;
+}
+
+.latex-out button {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  padding: 6px 12px;
+  white-space: nowrap;
+}
+
+.section-title {
+  margin: 8px 2px 0;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.keys {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 6px 10px;
+  margin: 0 0 8px;
+  font-size: 12.5px;
+}
+
+.keys dt {
+  font: 12px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+.keys dd {
+  margin: 0;
+  color: var(--muted);
+}
